@@ -17,10 +17,15 @@ public class Product {
     @Column(name="prod_code")
     @GeneratedValue(strategy = GenerationType.IDENTITY) //중요!!! primary key가 입력 동시에 동기화 업데이트
     private int prodCode; // prod_code
+
     @Column(name="prod_name")
     private String prodName; // prod_name
+
     @Column
     private int price;
+
+    @Column(name = "prod_photo")
+    private String prodPhoto; // prod_photo
 
     @ManyToOne //현위치에서 가져오는 객체와의 관계
     @JoinColumn(name = "cate_code") // 서로 맞닿는 컬럼 foreginkey
