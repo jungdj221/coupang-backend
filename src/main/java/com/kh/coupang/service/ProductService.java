@@ -2,7 +2,10 @@ package com.kh.coupang.service;
 
 import com.kh.coupang.domain.Product;
 import com.kh.coupang.repo.ProductDAO;
+import com.querydsl.core.BooleanBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,8 +15,8 @@ public class ProductService {
 
     @Autowired
     private ProductDAO dao;
-    public List<Product> viewAll(){
-        return dao.findAll();
+    public Page<Product> viewAll(Pageable pageable, BooleanBuilder builder){
+        return dao.findAll(builder, pageable);
     }
     public Product view(int code){
 
@@ -41,7 +44,7 @@ public class ProductService {
         return target;
     }
 
-    public List<Product> viewCategory(int code) {
-    return dao.findByCaeCode(code);
+    public Page<Product> viewCategory(int code, Pageable pageable) {
+    return dao.findByCaeCode(code,pageable);
     }
 }

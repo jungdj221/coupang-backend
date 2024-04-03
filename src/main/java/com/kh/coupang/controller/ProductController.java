@@ -3,10 +3,17 @@ package com.kh.coupang.controller;
 import com.kh.coupang.domain.Category;
 import com.kh.coupang.domain.Product;
 import com.kh.coupang.domain.ProductDTO;
+import com.kh.coupang.domain.QProduct;
 import com.kh.coupang.service.ProductService;
+import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,12 +38,31 @@ public class ProductController {
     private String uploadPath; // 업로드 경로 역할을 해줌(D:\\upload)
 
 
-    @GetMapping("/product")                                                     // 이 속성은 받는 것은 필수가 아님
-    public ResponseEntity<List<Product>> viewAll(@RequestParam(name="category", required = false) Integer category) {
-        log.info("category : " + category);
-        List<Product> list = service.viewAll();
-        return category==null ?  ResponseEntity.status(HttpStatus.OK).body(list):
-                                ResponseEntity.status(HttpStatus.OK).body(service.viewCategory(category));
+    @GetMapping("/product")                                                     // 이 속성은 받는 것은 필수가 아님                                   아무것도 안 보내면 page=1
+    public ResponseEntity<List<Product>> viewAll(@RequestParam(name="category", required = false) Integer category, @RequestParam(name = "page", defaultValue = "1") int page) {
+//        log.info("page : " + page);
+        Sort sort = Sort.by("prodCode").descending();
+        Pageable pageable = PageRequest.of(page-1, 10, sort);
+
+        // QueryDSL
+        // 1. 가장 먼저 동적 처리하기 위한 Q도메인 클래스 얻어오기
+        // Q도메인 클래스를 이용하면 Entity클래스에 선언된 필드들을 변수로 활용할 수 있음
+        QProduct qProduct = QProduct.product;
+
+        // 2. BooleanBuilder : where문에 들어가는 조건들을 넣어주는 컨테이너
+        BooleanBuilder builder = new BooleanBuilder();
+
+        if(category!=null){
+            // 3. 원하는 조건은 필드값과 같이 결합해서 생성
+            BooleanExpression expression = qProduct.category.cateCode.eq(category);
+
+            // 4. 만들어진 조건은 where문에 and나 or 같은 키워드와 결합
+            builder.and(expression);
+        }
+
+        // 5. BooleanBuilder 는 QuerydslPredicateExcutor 인터페이스의 findAll() 사용
+        Page<Product> list = service.viewAll(pageable, builder);
+        return   ResponseEntity.status(HttpStatus.OK).body(list.getContent());
     }
 
     @GetMapping("/product/{code}")
