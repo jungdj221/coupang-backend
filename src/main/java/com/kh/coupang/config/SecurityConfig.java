@@ -31,7 +31,7 @@ public class SecurityConfig {
                )
                .authorizeHttpRequests(authorize ->
                        authorize // 인증여부를 판단하는 로직 // 해당 location에 있는 거 접근 허용
-                               .requestMatchers("/signUp", "/login").permitAll()
+                               .requestMatchers("/signUp", "/login", "/api/public/**").permitAll()
                                .requestMatchers("/api/product").hasRole("USER")
                                .anyRequest().authenticated()
                )
