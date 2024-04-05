@@ -1,8 +1,7 @@
 package com.kh.coupang.controller;
 
-import com.kh.coupang.domain.Review;
-import com.kh.coupang.domain.ReviewDTO;
-import com.kh.coupang.domain.ReviewImage;
+import com.kh.coupang.domain.*;
+import com.kh.coupang.service.ReviewCommentService;
 import com.kh.coupang.service.ReviewService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +12,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,7 +22,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Slf4j
@@ -30,6 +34,9 @@ public class ReviewController {
 
     @Autowired
     private ReviewService review;
+
+    @Autowired
+    private ReviewCommentService comment;
 
     @Value("${spring.servlet.multipart.location}")
     private String uploadPath;
@@ -82,4 +89,68 @@ public class ReviewController {
 
         return ResponseEntity.status(HttpStatus.OK).body(list.getContent());
     }
+
+    public Object authentication(){
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+        Authentication authentication = securityContext.getAuthentication();
+        return authentication.getPrincipal();
+    }
+
+    // 리뷰글 하나에 댓글 달기
+    @PostMapping("/review/comment")
+    public ResponseEntity createComment(@RequestBody ReviewComment vo){
+        // 시큐리티에 있는 사용자 정보 가져오기
+//        SecurityContext securityContext = SecurityContextHolder.getContext();
+//        Authentication authentication = securityContext.getAuthentication();
+        Object principal = authentication();
+
+        if(principal instanceof User){ // principal에 유저정보가 담겨있다면
+            User user = (User) principal;
+            vo.setUser(user);
+            return ResponseEntity.ok(comment.create(vo));
+        }
+
+        log.info("vo : " + vo);
+        return ResponseEntity.badRequest().build();
+    }
+
+    // 특정 리뷰글에 따른 그에 해당하는 댓글 조회 -> 여기도 로그인에 관계없이 보여질수 있게하기
+    @GetMapping("/public/review/{reviCode}/comment")
+    public ResponseEntity<List<ReviewCommentDTO>> viewComment(@PathVariable(name = "reviCode") int reviCode){
+        List<ReviewComment> topList = comment.getTopLevelComments(reviCode);
+        List<ReviewCommentDTO> response = new ArrayList<>();  // 상위 댓글 담기
+
+        for (ReviewComment top : topList){
+            List<ReviewComment> replies = comment.getRepliesComments(top.getReviComCode(), reviCode);
+            List<ReviewCommentDTO> repliesDTO = new ArrayList<>();
+            for (ReviewComment reply : replies){
+                ReviewCommentDTO dto = ReviewCommentDTO.builder()
+                        .reviCode(reply.getReviCode())
+                        .reviComeCode(reply.getReviComCode())
+                        .reviComeDesc(reply.getReviComDesc())
+                        .reviComDate(reply.getReviComDate())
+                        .user(UserDTO.builder()
+                                .id(reply.getUser().getId())
+                                .name(reply.getUser().getName())
+                                .build())
+                        .build();
+                repliesDTO.add(dto);
+            }
+            ReviewCommentDTO dto = ReviewCommentDTO.builder()
+                    .reviCode(top.getReviCode())
+                    .reviComeCode(top.getReviComCode())
+                    .reviComeDesc(top.getReviComDesc())
+                    .reviComDate(top.getReviComDate())
+                    .user(UserDTO.builder()
+                            .id(top.getUser().getId())
+                            .name(top.getUser().getName())
+                            .build())
+                    .replies(repliesDTO)
+                    .build();
+            response.add(dto);
+        }
+
+        return ResponseEntity.ok(response);
+    }
+
 }
