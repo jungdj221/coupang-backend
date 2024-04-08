@@ -181,39 +181,43 @@ public class ProductController {
     @GetMapping("/public/product/{prodCode}/comment")
     public ResponseEntity<List<ProductCommentDTO>> viewComment(@PathVariable(name = "prodCode")int prodCode){
         List<ProductComment> topList = comment.getTopLevelComments(prodCode);
-        List<ProductCommentDTO> response = new ArrayList<>();
+       List<ProductCommentDTO> response = commentList(topList, prodCode);
+        /*new ArrayList<>();
 
-        for(ProductComment top : topList){
+        //for(ProductComment top : topList){
             List<ProductComment> replies = comment.getRepliesComments(top.getProComCode(), prodCode); // 각각의 상위의 하위 댓글들
-            List<ProductCommentDTO> repliesDTO = new ArrayList<>();
-            for(ProductComment reply : replies){
-                ProductCommentDTO dto = ProductCommentDTO.builder()
-                        .prodCode(reply.getProdCode())
-                        .proComCode(reply.getProComCode())
-                        .proComeDesc(reply.getProComDesc())
-                        .proComDate(reply.getProComDate())
-                        .user(UserDTO.builder()
-                                .id(reply.getUser().getId())
-                                .name(reply.getUser().getName())
-                                .build())
-                        .build();
+           // List<ProductCommentDTO> repliesDTO = new ArrayList<>();
+            //for(ProductComment reply : replies){
+              //ProductCommentDTO dto = commentDetail(reply);
                 repliesDTO.add(dto);
             }
+            //ProductCommentDTO dto = commentDetail(top);
+            dto.setReplies(repliesDTO);
+            response.add(dto);*/
+        return ResponseEntity.ok(response);
+    }
 
-            ProductCommentDTO dto = ProductCommentDTO.builder()
-                    .prodCode(top.getProdCode())
-                    .proComCode(top.getProComCode())
-                    .proComeDesc(top.getProComDesc())
-                    .proComDate(top.getProComDate())
-                    .user(UserDTO.builder()
-                            .id(top.getUser().getId())
-                            .name(top.getUser().getName())
-                            .build())
-                    .replies(repliesDTO)
-                    .build();
+    public List<ProductCommentDTO> commentList( List<ProductComment> comments, int prodCode){
+        List<ProductCommentDTO> response = new ArrayList<>();
+        for(ProductComment item : comments){
+            List<ProductComment> replies = comment.getRepliesComments(item.getProComCode(), prodCode); // 각각의 상위의 하위 댓글들
+            List<ProductCommentDTO> repliesDTO = commentList(replies, prodCode);
+            ProductCommentDTO dto = commentDetail(item);
+            dto.setReplies(repliesDTO);
             response.add(dto);
         }
-        return ResponseEntity.ok(response);
-
+        return response;
+    }
+    public ProductCommentDTO commentDetail(ProductComment vo){
+        return ProductCommentDTO.builder()
+                .prodCode(vo.getProdCode())
+                .proComCode(vo.getProComCode())
+                .proComeDesc(vo.getProComDesc())
+                .proComDate(vo.getProComDate())
+                .user(UserDTO.builder()
+                        .id(vo.getUser().getId())
+                        .name(vo.getUser().getName())
+                        .build())
+                .build();
     }
 }
