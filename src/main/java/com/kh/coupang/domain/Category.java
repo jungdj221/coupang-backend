@@ -1,8 +1,7 @@
 package com.kh.coupang.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,4 +24,12 @@ public class Category {
 
     @Column(name = "cate_url")
     private String cateUrl;
+
+    @Column(name = "parent_code")
+    private Integer parentCode;
+
+    @JsonIgnore
+    @ManyToOne
+    @JoinColumn(name = "parent_code",referencedColumnName = "cate_code", insertable = false, updatable = false)
+    private Category category;
 }

@@ -7,6 +7,7 @@ import com.querydsl.core.types.dsl.*;
 import com.querydsl.core.types.PathMetadata;
 import javax.annotation.processing.Generated;
 import com.querydsl.core.types.Path;
+import com.querydsl.core.types.dsl.PathInits;
 
 
 /**
@@ -17,9 +18,13 @@ public class QCategory extends EntityPathBase<Category> {
 
     private static final long serialVersionUID = 2011379337L;
 
-    public static final QCategory category = new QCategory("category");
+    private static final PathInits INITS = PathInits.DIRECT2;
+
+    public static final QCategory category1 = new QCategory("category1");
 
     public final NumberPath<Integer> cateCode = createNumber("cateCode", Integer.class);
+
+    public final QCategory category;
 
     public final StringPath cateIcon = createString("cateIcon");
 
@@ -27,16 +32,27 @@ public class QCategory extends EntityPathBase<Category> {
 
     public final StringPath cateUrl = createString("cateUrl");
 
+    public final NumberPath<Integer> parentCode = createNumber("parentCode", Integer.class);
+
     public QCategory(String variable) {
-        super(Category.class, forVariable(variable));
+        this(Category.class, forVariable(variable), INITS);
     }
 
     public QCategory(Path<? extends Category> path) {
-        super(path.getType(), path.getMetadata());
+        this(path.getType(), path.getMetadata(), PathInits.getFor(path.getMetadata(), INITS));
     }
 
     public QCategory(PathMetadata metadata) {
-        super(Category.class, metadata);
+        this(metadata, PathInits.getFor(metadata, INITS));
+    }
+
+    public QCategory(PathMetadata metadata, PathInits inits) {
+        this(Category.class, metadata, inits);
+    }
+
+    public QCategory(Class<? extends Category> type, PathMetadata metadata, PathInits inits) {
+        super(type, metadata, inits);
+        this.category = inits.isInitialized("category") ? new QCategory(forProperty("category"), inits.get("category")) : null;
     }
 
 }

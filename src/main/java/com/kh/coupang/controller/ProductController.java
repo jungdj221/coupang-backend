@@ -1,6 +1,7 @@
 package com.kh.coupang.controller;
 
 import com.kh.coupang.domain.*;
+import com.kh.coupang.service.CategoryService;
 import com.kh.coupang.service.ProductCommentService;
 import com.kh.coupang.service.ProductService;
 import com.querydsl.core.BooleanBuilder;
@@ -30,6 +31,7 @@ import java.util.UUID;
 @Slf4j  // syso 같은 역할
 @RestController
 @RequestMapping("/api/*")
+@CrossOrigin(origins ={"*"}, maxAge = 6000)
 public class ProductController {
 
     @Autowired
@@ -39,15 +41,18 @@ public class ProductController {
     @Autowired
     private ProductCommentService comment;
 
+    @Autowired
+    private CategoryService category;
+
     @Value("${spring.servlet.multipart.location}")
     private String uploadPath; // 업로드 경로 역할을 해줌(D:\\upload)
 
 
-    @GetMapping("/product")                                                     // 이 속성은 받는 것은 필수가 아님                                   아무것도 안 보내면 page=1
+    @GetMapping("/public/product")                                                     // 이 속성은 받는 것은 필수가 아님                                   아무것도 안 보내면 page=1
     public ResponseEntity<List<Product>> viewAll(@RequestParam(name="category", required = false) Integer category, @RequestParam(name = "page", defaultValue = "1") int page) {
 //        log.info("page : " + page);
-        Sort sort = Sort.by("prodCode").descending();
-        Pageable pageable = PageRequest.of(page-1, 10, sort);
+        Sort sort = Sort.by("prodCode"); // .descending 얘가 정렬 로직
+        Pageable pageable = PageRequest.of(page-1, 10, sort); // sort를 안 보내면 asc/ 넣으면 des
 
         // QueryDSL
         // 1. 가장 먼저 동적 처리하기 위한 Q도메인 클래스 얻어오기
@@ -219,5 +224,24 @@ public class ProductController {
                         .name(vo.getUser().getName())
                         .build())
                 .build();
+    }
+
+    // 카테고리 불러오기
+    @GetMapping("/public/category")
+    public  ResponseEntity<List<CategoryDTO>> categoryView(){
+        List<Category> topList = category.getTopLevelCategory();
+        List<CategoryDTO> response = new ArrayList<>();
+        for (Category item :  topList){
+            CategoryDTO dto = CategoryDTO.builder()
+                    .cateIcon(item.getCateIcon())
+                    .cateName(item.getCateName())
+                    .cateCode(item.getCateCode())
+                    .cateUrl(item.getCateUrl())
+                    .subCategories(category.getBottomLevelCategory(item.getCateCode()))
+                    .build();
+            response.add(dto);
+        }
+
+        return ResponseEntity.ok(response);
     }
 }
