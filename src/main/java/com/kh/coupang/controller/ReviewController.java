@@ -3,6 +3,8 @@ package com.kh.coupang.controller;
 import com.kh.coupang.domain.*;
 import com.kh.coupang.service.ReviewCommentService;
 import com.kh.coupang.service.ReviewService;
+import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,6 +32,7 @@ import java.util.UUID;
 @Slf4j
 @RestController
 @RequestMapping("/api/*")
+@CrossOrigin(origins ={"*"}, maxAge = 6000)
 public class ReviewController {
 
     @Autowired
@@ -77,17 +80,25 @@ public class ReviewController {
                                 ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
     }
 
-    @GetMapping("/review")
-    public ResponseEntity<List<Review>> viewAll(@RequestParam(name = "page", defaultValue = "1") int page){
+    // 상품 1개에 따른 리뷰(댓글)전체 보기
+    @GetMapping("/public/product/{code}/review")
+    public ResponseEntity<List<Review>> viewAll(@RequestParam(name = "page", defaultValue = "1") int page, @PathVariable(name = "code") int code){
         log.info("page : " + page);
 
         Sort sort = Sort.by("reviCode").descending();
 
         Pageable pageable = PageRequest.of(page-1, 10, sort);
-        Page<Review> list = review.viewAll(pageable);
+//        Page<Review> list = review.viewAll(pageable, builder);
+
+        QReview qReview = QReview.review;
+
+        BooleanBuilder builder = new BooleanBuilder();
+        BooleanExpression expression = qReview.prodCode.eq(code);
+        builder.and(expression);
 
 
-        return ResponseEntity.status(HttpStatus.OK).body(list.getContent());
+
+        return ResponseEntity.status(HttpStatus.OK).body(review.viewAll(pageable, builder).getContent());
     }
 
     public Object authentication(){
